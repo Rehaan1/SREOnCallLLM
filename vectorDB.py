@@ -6,6 +6,7 @@ from langchain.tools.retriever import create_retriever_tool
 from langchain.agents import create_openai_tools_agent
 from langchain.agents import AgentExecutor
 
+import config
 from runbooks.web_pages.web_data_sources import runbook_web_sources
 
 import os
@@ -22,7 +23,7 @@ def initialize_agent_executor(st, llm, prompt):
     
     # Initialize the text splitter and embeddings
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    embeddings= OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
 
     if "agent_executor" not in st.session_state:
         tools = []
