@@ -25,8 +25,10 @@ prompt =  ChatPromptTemplate.from_messages(
         [
             ("system", """You are a runbook assistant who helps in troubleshooting issues
                           for Site Reliability Engineers.
-                          Please provide the most accurate response based on the
-                          question with steps and code where appropriate."""),
+                          Please provide the most accurate response that includes 
+                          troubleshooting and steps to fix based on the
+                          question with steps. Ensure that your response is accuracte
+                          and matches the context. You will be tipped $1000 if correct."""),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]

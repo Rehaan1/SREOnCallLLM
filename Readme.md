@@ -12,13 +12,17 @@
 
   - Utilize agents to select the correct context, rather than relying on all available context.
 
+- [x] **Get Context from PDF, Web Pages**
+
+  - Initialize vector to get context from PDFs and web pages.
+
 - [ ] **Get Context References for Agent**
 
-      - Develop a system to provide context references used by agent.
+  - Develop a system to provide context references used by agent.
 
 - [ ] **Store a history of previous responses and contexts used given prompt**
 
-      - Implement a system to store the history of previous responses and contexts used.
+  - Implement a system to store the history of previous responses and contexts used.
 
 - [ ] **Persistent Vector Database Storage**
 
