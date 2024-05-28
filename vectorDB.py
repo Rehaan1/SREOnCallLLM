@@ -17,34 +17,21 @@ def initialize_agent_executor(st, llm, prompt):
     This initializes all tools for multiple data sources and
     creates an agent executor for the Nebula Runbook LLM.
     """
-
     message = st.empty()
     message.text("Initializing Agents. Please wait.....")
     
     # Initialize the text splitter and embeddings
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,
-                                                   chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     embeddings= OpenAIEmbeddings()
 
     if "agent_executor" not in st.session_state:
         tools = []
-
-        tools.extend(_embed_pdf_runbooks(text_splitter=text_splitter,
-                                         embeddings=embeddings))
-        
-        tools.extend(_embed_web_page_runbooks(text_splitter=text_splitter,
-                                              embeddings=embeddings))
-
+        tools.extend(_embed_pdf_runbooks(text_splitter=text_splitter, embeddings=embeddings))
+        tools.extend(_embed_web_page_runbooks(text_splitter=text_splitter, embeddings=embeddings))
         # Create the agent
-        agent = create_openai_tools_agent(llm, 
-                                        tools, 
-                                        prompt)
-            
+        agent = create_openai_tools_agent(llm, tools, prompt)
         # Store the agent executor in the session state
-        st.session_state.agent_executor = AgentExecutor(agent=agent, 
-                                                        tools=tools, 
-                                                        verbose=True)
-        
+        st.session_state.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
         message.text("Vector Database and Agent Initialized")
     else:
         message.text("Vector Database and Agent already initialized")   
@@ -65,15 +52,14 @@ def _embed_pdf_runbooks(text_splitter, embeddings):
         # Load the PDF
         pdf_loader = PyPDFLoader("./runbooks/pdfs/" + filename)
         doc = pdf_loader.load()
-        
+
         # Split the PDf based on chunks
         final_documents = text_splitter.split_documents(doc)
         # Create a vector from the documents
-        vector = FAISS.from_documents(final_documents,
-                                      embeddings)
+        vector = FAISS.from_documents(final_documents, embeddings)
         # Create a retriever from the vector
         retriever = vector.as_retriever()
-        
+
         # Remove any special characters and file extensions from file name
         name = re.sub(r'\W+', ' ', filename)
         # Fill all white spaces with underscores
@@ -81,13 +67,11 @@ def _embed_pdf_runbooks(text_splitter, embeddings):
         # Choose the first chunk as the description
         description = final_documents[0].page_content
         description = re.sub(r'\W+', ' ', description)
-        
+
         # Create the retriever tool
-        retriever_tool = create_retriever_tool(retriever,
-                                               name,
-                                               description)
+        retriever_tool = create_retriever_tool(retriever, name, description)
         pdf_retriever_tools.append(retriever_tool)
-    
+
     return pdf_retriever_tools
 
 
@@ -107,11 +91,6 @@ def _embed_web_page_runbooks(text_splitter, embeddings):
 
         name = source["name"]
         description = source["description"]
-        web_retriever_tool = create_retriever_tool(web_retriever,
-                                                   name,
-                                                   description)
-        
+        web_retriever_tool = create_retriever_tool(web_retriever, name, description)
         web_tools.append(web_retriever_tool)
-    
     return web_tools
-    
