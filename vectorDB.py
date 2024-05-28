@@ -9,10 +9,10 @@ def create_vector_database(st):
     vector database.
     """
 
+    message = st.empty()
     # Intialize the vector database only if not already in session
     # @TODO: Store Vector Database in a more permanent location
     if "vectors" not in st.session_state:
-        message = st.empty()
         message.text("Vectorizing Runbooks. Please wait.....")
         st.session_state.embeddings = OpenAIEmbeddings()
         st.session_state.loader = PyPDFDirectoryLoader("./runbooks")
@@ -22,4 +22,7 @@ def create_vector_database(st):
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents,
                                                         st.session_state.embeddings)
+        st.session_state.retriever = st.session_state.vectors.as_retriever()
         message.text("Database Initialized")
+    else:
+        message.text("Database already initialized")
