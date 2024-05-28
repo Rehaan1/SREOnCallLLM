@@ -41,7 +41,7 @@ if st.button("Initialize Runbooks"):
 input_prompt = st.text_input("What system issue are you facing?")
 
 if input_prompt:
-    if not st.session_state.agent_executor:
+    if "agent_executor" not in st.session_state or not st.session_state.agent_executor:
         st.write("Please initialize the runbooks first")
     else:     
         with st.spinner("Thinking..."):

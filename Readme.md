@@ -2,6 +2,30 @@
 
 ## A Runbook Assistant for Site Reliability Engineers
 
+### Steps to Run
+
+1. Clone the repository
+
+2. Install the required packages
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Create a `.env` file in the root directory of the project and add the following environment variables:
+
+```bash
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+```
+
+4. Run the application
+
+```bash
+streamlit run app.py
+```
+
+5. Open the browser and navigate to `http://localhost:8501`
+
 ### Features to Develop:
 
 - [ ] **Runbook Upload Capability**
