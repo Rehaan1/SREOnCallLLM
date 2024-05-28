@@ -8,9 +8,17 @@
 
   - Implement functionality to upload runbooks directly into the system.
 
-- [ ] **Intelligent Context Selection**
+- [x] **Intelligent Context Selection**
 
   - Utilize agents to select the correct context, rather than relying on all available context.
+
+- [ ] **Get Context References for Agent**
+
+      - Develop a system to provide context references used by agent.
+
+- [ ] **Store a history of previous responses and contexts used given prompt**
+
+      - Implement a system to store the history of previous responses and contexts used.
 
 - [ ] **Persistent Vector Database Storage**
 
