@@ -50,7 +50,7 @@ def initialize_agent_executor(st, llm, prompt):
         message.text("Vector Database and Agent already initialized")   
 
 
-def _embed_pdf_runbooks(text_splitter, embeddings):
+def _embed_pdf_runbooks(text_splitter, embeddings, override=False):
     """
     This reads all pdf runbook documents from a directory and creates 
     retriever tools for the pdf runbooks.
@@ -62,15 +62,25 @@ def _embed_pdf_runbooks(text_splitter, embeddings):
     for filename in os.listdir("./runbooks/pdfs"):
         if not filename.endswith('.pdf'):
             continue
+
+        index_path = f"./vector_db/pdf_{filename}.faiss"
+
         # Load the PDF
         pdf_loader = PyPDFLoader("./runbooks/pdfs/" + filename)
         doc = pdf_loader.load()
-        
-        # Split the PDf based on chunks
         final_documents = text_splitter.split_documents(doc)
-        # Create a vector from the documents
-        vector = FAISS.from_documents(final_documents,
-                                      embeddings)
+
+        if os.path.exists(index_path) and not override:
+            vector = FAISS.load_local(index_path, 
+                                      embeddings,
+                                      allow_dangerous_deserialization=True)
+        else:
+            # Create a vector from the documents
+            vector = FAISS.from_documents(final_documents,
+                                        embeddings)
+            # Save the vector to disk
+            vector.save_local(index_path)
+
         # Create a retriever from the vector
         retriever = vector.as_retriever()
         
@@ -91,7 +101,7 @@ def _embed_pdf_runbooks(text_splitter, embeddings):
     return pdf_retriever_tools
 
 
-def _embed_web_page_runbooks(text_splitter, embeddings):
+def _embed_web_page_runbooks(text_splitter, embeddings, override=False):
     """
     This reads given webpages and ingests the data
     into the vector database.
@@ -99,10 +109,22 @@ def _embed_web_page_runbooks(text_splitter, embeddings):
     web_tools = []
 
     for source in runbook_web_sources:
-        loader = WebBaseLoader(source["url"])
-        web_docs = loader.load()
-        documents = text_splitter.split_documents(web_docs)
-        web_vector = FAISS.from_documents(documents, embeddings)
+        index_path = f"./vector_db/web_{source['name']}.faiss"
+
+        if os.path.exists(index_path) and not override:
+            web_vector = FAISS.load_local(index_path, 
+                                          embeddings,
+                                          allow_dangerous_deserialization=True)
+        
+        else:
+            loader = WebBaseLoader(source["url"])
+            web_docs = loader.load()
+            documents = text_splitter.split_documents(web_docs)
+            web_vector = FAISS.from_documents(documents, embeddings)
+
+            # Save the vector to disk
+            web_vector.save_local(index_path)
+
         web_retriever = web_vector.as_retriever()
 
         name = source["name"]

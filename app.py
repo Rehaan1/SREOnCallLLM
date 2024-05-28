@@ -23,13 +23,15 @@ llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
 
 prompt =  ChatPromptTemplate.from_messages(
         [
-            ("system", """You are a runbook assistant who helps in troubleshooting issues
-                          for Site Reliability Engineers.
-                          Please provide the most accurate response that includes 
-                          troubleshooting and steps to fix based on the
-                          question with steps. Ensure that your response is accuracte
-                          and matches the context. You will be tipped $1000 if correct."""),
-            ("user", "{input}"),
+            ("system", """You are a runbook assistant who helps in troubleshooting 
+             issues for Site Reliability Engineers. Your task is to provide the 
+             most accurate response, including detailed troubleshooting steps and 
+             corresponding code for each step, if applicable. Ensure that your 
+             response is precise, relevant to the context, and includes code 
+             snippets when necessary for each step. A $1000 tip will be awarded 
+             if the response is correct and complete. Failure to include
+             relevant code for each step will result in a penalty of $2000"""),
+            ("user", "{input}. Give me step by step procedure to fix the issue along with code"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
