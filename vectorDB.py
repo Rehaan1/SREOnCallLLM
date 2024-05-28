@@ -60,7 +60,9 @@ def _embed_pdf_runbooks(text_splitter, embeddings, override=False):
         final_documents = text_splitter.split_documents(doc)
         # Create a vector from the documents
         if os.path.exists(index_path) and not override:
-            vector = FAISS.from_documents(final_documents, embeddings, allow_dangerous_deserialization=True)
+           vector = FAISS.load_local(index_path, 
+                                     embeddings,
+                                     allow_dangerous_deserialization=True)
         else:
             # Create a vector from the documents
             vector = FAISS.from_documents(final_documents, embeddings)
@@ -96,7 +98,9 @@ def _embed_web_page_runbooks(text_splitter, embeddings, override=False):
         index_path = f"./vector_db/web_{source['name']}.faiss"
 
         if os.path.exists(index_path) and not override:
-            web_vector = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
+            web_vector = FAISS.load_local(index_path, 
+                                          embeddings, 
+                                          allow_dangerous_deserialization=True)
         else:
             loader = WebBaseLoader(source["url"])
             web_docs = loader.load()
