@@ -48,9 +48,13 @@ streamlit run app.py
 
   - Implement a system to store the history of previous responses and contexts used.
 
-- [ ] **Persistent Vector Database Storage**
+- [x] **Persistent Vector Database Storage**
 
-  - Develop a system to create and store a vector database in permanent storage.
+  - Develop a system to create and store a vector database in permanent storage locally.
+
+- [ ] **Persistent Vector Database Storage On Cloud**
+
+  - Develop a system to store the vector database on cloud storage.
 
 - [ ] **Contextual Continuity**
 

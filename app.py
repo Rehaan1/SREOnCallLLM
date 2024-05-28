@@ -15,7 +15,7 @@ llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0, api_key=config.OPENA
 prompt = ChatPromptTemplate.from_messages(
         [
             ("system", config.SYSTEM_CONTEXT),
-            ("user", "{input}"),
+            ("user", "{input}. Give me step by step procedure to fix the issue along with code"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
