@@ -5,8 +5,7 @@ import os
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-
-from vectorDB import embed_pdf_runbooks
+from vectorDB import initialize_agent_executor
 
 from dotenv import load_dotenv
 
@@ -15,7 +14,6 @@ load_dotenv()
 
 # Set up the OpenAI API key
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-
 
 st.title("Nebula Runbook LLM")
 st.subheader("A Runbook Assistant for Site Reliability Engineers")
@@ -34,8 +32,9 @@ prompt =  ChatPromptTemplate.from_messages(
         ]
     )
 
+# Initialize the agent executor if not already initialized
 if st.button("Initialize Runbooks"):
-    embed_pdf_runbooks(st, llm, prompt)
+    initialize_agent_executor(st, llm, prompt)
 
 input_prompt = st.text_input("What system issue are you facing?")
 
