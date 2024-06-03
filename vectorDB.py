@@ -1,6 +1,6 @@
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Milvus
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
 from langchain.tools.retriever import create_retriever_tool
 from langchain.agents import create_openai_tools_agent
@@ -20,100 +20,146 @@ def initialize_agent_executor(st, llm, prompt):
     """
     message = st.empty()
     message.text("Initializing Agents. Please wait.....")
-    
-    # Initialize the text splitter and embeddings
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+    tools = []
+    
+    # @TODO: Note: This needs to be updated to prevent 
+    # Repetation of Code. This is only a demo code
+    
+    # PDF Tool
+    pdf_vdb = Milvus(embedding_function=embeddings,
+                      collection_name=config.VDB_PDF_COLLECTION,
+                      connection_args={
+                          "uri": config.ZILLIZ_CLOUD_URI,
+                          "token": config.ZILLIZ_CLOUD_API_KEY,
+                          "secure": True,
+                      })
+    
+    pdf_retriver = pdf_vdb.as_retriever()
 
-    if "agent_executor" not in st.session_state:
-        tools = []
-        tools.extend(_embed_pdf_runbooks(text_splitter=text_splitter, embeddings=embeddings))
-        tools.extend(_embed_web_page_runbooks(text_splitter=text_splitter, embeddings=embeddings))
-        # Create the agent
-        agent = create_openai_tools_agent(llm, tools, prompt)
-        # Store the agent executor in the session state
-        st.session_state.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        message.text("Vector Database and Agent Initialized")
-    else:
-        message.text("Vector Database and Agent already initialized")   
+    # Note: This is just a demo. Use better name and description
+    # as they are used in the LLM Reasoning agent
+    pdf_tool = create_retriever_tool(pdf_retriver, 
+                                     "pdf_sources_sre",
+                                     "A compiled list of various common System issues")
+    
+    tools.append(pdf_tool)
+
+    # Web Tool
+    web_vdb = Milvus(embedding_function=embeddings,
+                        collection_name=config.VDB_WEB_COLLECTION,
+                        connection_args={
+                            "uri": config.ZILLIZ_CLOUD_URI,
+                            "token": config.ZILLIZ_CLOUD_API_KEY,
+                            "secure": True,
+                        })
+    
+    web_retriver = web_vdb.as_retriever()
+
+    # Note: This is just a demo. Use better name and description
+    # as they are used in the LLM Reasoning agent
+    web_tool = create_retriever_tool(web_retriver,
+                                        "web_sources_sre",
+                                        "A compiled list of various common System issues")
+    
+    tools.append(web_tool)
+
+   
+    agent = create_openai_tools_agent(llm, tools, prompt)
+    # Store the agent executor in the session state
+    st.session_state.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    message.text("Agents Initialized. Nebula Runbook Ready to use")
 
 
-def _embed_pdf_runbooks(text_splitter, embeddings, override=False):
+def check_data_source_embedding_exists(source, embedding, collection_name):
+    """
+    Checks if a data source is already embedded in the vector database based on
+    source. Source can be pdf name or url.
+    """
+    vector_db = Milvus(embedding_function=embedding,
+                       collection_name=collection_name,
+                       connection_args={
+                           "uri": config.ZILLIZ_CLOUD_URI,
+                           "token": config.ZILLIZ_CLOUD_API_KEY,
+                           "secure": True,
+                       }, )
+    expression = f"source LIKE '%{source}'"
+    docs = vector_db.get_pks(expression)
+
+    if docs is None or len(docs) == 0:
+        return False
+
+    return True
+
+
+def _embed_pdf_runbooks(text_splitter, embeddings):
     """
     This reads all pdf runbook documents from a directory and creates 
     retriever tools for the pdf runbooks.
     """
-
-    # @TODO: Store Vector Database in a more permanent location
-    pdf_retriever_tools = []
     
     for filename in os.listdir("./runbooks/pdfs"):
         if not filename.endswith('.pdf'):
             continue
 
-        index_path = f"./vector_db/pdf_{filename}.faiss"
+        if check_data_source_embedding_exists(filename, embeddings, config.VDB_PDF_COLLECTION):
+            print("already embedded")
+            continue
 
         # Load the PDF
         pdf_loader = PyPDFLoader("./runbooks/pdfs/" + filename)
         doc = pdf_loader.load()
         # Split the PDf based on chunks
         final_documents = text_splitter.split_documents(doc)
-        # Create a vector from the documents
-        if os.path.exists(index_path) and not override:
-           vector = FAISS.load_local(index_path, 
-                                     embeddings,
-                                     allow_dangerous_deserialization=True)
-        else:
-            # Create a vector from the documents
-            vector = FAISS.from_documents(final_documents, embeddings)
-            # Save the vector to disk
-            vector.save_local(index_path)
+        
+        Milvus.from_documents(final_documents,
+                              embeddings,
+                              collection_name=config.VDB_PDF_COLLECTION,
+                              connection_args={
+                                  "uri": config.ZILLIZ_CLOUD_URI,
+                                  "token": config.ZILLIZ_CLOUD_API_KEY,
+                                  "secure": True,
+                              })
 
-        # Create a retriever from the vector
-        retriever = vector.as_retriever()
-
-        # Remove any special characters and file extensions from file name
-        name = re.sub(r'\W+', ' ', filename)
-        # Fill all white spaces with underscores
-        name = re.sub(r'\s+', '_', name)
-        # Choose the first chunk as the description
-        description = final_documents[0].page_content
-        description = re.sub(r'\W+', ' ', description)
-
-        # Create the retriever tool
-        retriever_tool = create_retriever_tool(retriever, name, description)
-        pdf_retriever_tools.append(retriever_tool)
-
-    return pdf_retriever_tools
+    return True
 
 
-def _embed_web_page_runbooks(text_splitter, embeddings, override=False):
+def vectorize_data():
+    """
+    This function vectorizes the data from the data sources.
+    """
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+
+    _embed_pdf_runbooks(text_splitter, embeddings)
+    _embed_web_page_runbooks(text_splitter, embeddings)
+
+    print("-----------Data Vectorized---------")
+
+
+
+def _embed_web_page_runbooks(text_splitter, embeddings):
     """
     This reads given webpages and ingests the data
     into the vector database.
     """
-    web_tools = []
 
     for source in runbook_web_sources:
-        index_path = f"./vector_db/web_{source['name']}.faiss"
+        if check_data_source_embedding_exists(source["url"], embeddings, config.VDB_WEB_COLLECTION):
+            print("already embedded")
+            continue
 
-        if os.path.exists(index_path) and not override:
-            web_vector = FAISS.load_local(index_path, 
-                                          embeddings, 
-                                          allow_dangerous_deserialization=True)
-        else:
-            loader = WebBaseLoader(source["url"])
-            web_docs = loader.load()
-            documents = text_splitter.split_documents(web_docs)
-            web_vector = FAISS.from_documents(documents, embeddings)
+        loader = WebBaseLoader(source["url"])
+        web_docs = loader.load()
+        documents = text_splitter.split_documents(web_docs)
+        Milvus.from_documents(documents,
+                              embeddings,
+                              collection_name=config.VDB_WEB_COLLECTION,
+                              connection_args={
+                                  "uri": config.ZILLIZ_CLOUD_URI,
+                                  "token": config.ZILLIZ_CLOUD_API_KEY,
+                                  "secure": True,
+                              })
 
-            # Save the vector to disk
-            web_vector.save_local(index_path)
-
-        web_retriever = web_vector.as_retriever()
-
-        name = source["name"]
-        description = source["description"]
-        web_retriever_tool = create_retriever_tool(web_retriever, name, description)
-        web_tools.append(web_retriever_tool)
-    return web_tools
+    return True

@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 # from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI
 import config
-from vectorDB import initialize_agent_executor
+from vectorDB import initialize_agent_executor, vectorize_data
 
 
 st.title("Nebula Runbook LLM")
@@ -23,6 +23,14 @@ prompt = ChatPromptTemplate.from_messages(
 # Initialize the agent executor if not already initialized
 if st.button("Initialize Run books"):
     initialize_agent_executor(st, llm, prompt)
+
+# Vectorize the data sources
+if st.button("Vectorize Data Sources"):
+    msg = st.empty()
+    msg.write("Vectorizing data sources. Please wait...")
+    vectorize_data()
+    msg.write("Data sources vectorized successfully")
+
 
 input_prompt = st.text_input("What system issue are you facing?")
 

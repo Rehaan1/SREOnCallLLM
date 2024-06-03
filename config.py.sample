@@ -3,4 +3,8 @@ SYSTEM_CONTEXT = """You are a runbook assistant who helps in troubleshooting iss
                     Provide the most accurate response that includes troubleshooting and steps to fix based on the
                     question with steps. Ensure that your response is accurate and matches the context. You will
                     be tipped $1000 if correct."""
+VDB_PDF_COLLECTION = ""
+ZILLIZ_CLOUD_URI = ""
+ZILLIZ_CLOUD_API_KEY = ""
+VDB_WEB_COLLECTION = ""
 
