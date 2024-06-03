@@ -52,7 +52,7 @@ streamlit run app.py
 
   - Develop a system to create and store a vector database in permanent storage locally.
 
-- [ ] **Persistent Vector Database Storage On Cloud**
+- [x] **Persistent Vector Database Storage On Cloud**
 
   - Develop a system to store the vector database on cloud storage.
 
